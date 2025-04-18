@@ -1,0 +1,18 @@
+[tool.uv]
+# uv config
+
+[project]
+name = "tender-scraper"
+version = "0.1.0"
+
+[project.dependencies]
+fastapi = "*"
+uvicorn = "*"
+playwright = "*"
+beautifulsoup4 = "*"
+markdownify = "*"
+openai = "*"
+pdfplumber = "*"
+pandas = "*"
+pytest = {extras = ["asyncio"]}
+ruff = "*"
