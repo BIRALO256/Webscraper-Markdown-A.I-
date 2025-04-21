@@ -16,8 +16,11 @@ def extract_fields(markdown: str, fields: list[str]) -> dict:
     Logs the raw LLM output for debugging.
     """
     prompt = f"""
-You are an expert data extractor.  Return **ONLY** a single JSON object with these keys: {fields}.
-Do **not** include any additional text, explanation, or markdown fences—just the JSON.
+You are an expert data extractor.
+Extract all available data using these keys: {fields}.
+If only one set of data is found, return a single JSON object.
+If multiple sets are found, return a JSON array of objects.
+Do not include any additional text, explanation, or markdown fences—just the JSON
 
 ```markdown
 {markdown}
@@ -25,7 +28,7 @@ Do **not** include any additional text, explanation, or markdown fences—just t
 
     # Call the new v1 OpenAI Python interface
     resp = openai.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
     )
