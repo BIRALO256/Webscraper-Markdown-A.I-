@@ -4,11 +4,14 @@ import sys, asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
+from pydantic import BaseModel
+from typing import List, Dict
+
 # On Windows, ensure compatibility for any other async operations
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from scraper.fetcher      import fetch_page
+from scraper.fetcher      import fetch_page, navigate_and_fetch
 from processor.markdownifier import html_to_markdown
 from processor.llm_extractor import extract_fields
 
@@ -26,6 +29,13 @@ FIELDS = [
     "agency"
 ]
 
+
+class NavRequest(BaseModel):
+    url: str
+    steps: List[Dict[str, str]]
+
+
+
 @app.get("/scrape")
 async def scrape_and_extract(url: str):
     # 1) Fetch HTML via requests in a worker thread
@@ -36,6 +46,9 @@ async def scrape_and_extract(url: str):
 
     # 2) Convert HTML → Markdown
     markdown = html_to_markdown(html)
+    
+    print("\n📝 Extracted Markdown:\n", markdown[:2000])  # First 2000 chars.
+
 
     # 3) Send Markdown to LLM for field extraction
     try:
@@ -44,3 +57,22 @@ async def scrape_and_extract(url: str):
         raise HTTPException(status_code=500, detail=f"Error extracting fields: {e}")
 
     return data
+
+@app.post("/scrape/nav")
+async def scrape_with_navigation(req: NavRequest):
+    """
+    Human-like multi-step scraping.
+    Supply `req.url` plus an ordered list of `req.steps`
+    to click or navigate until you reach the target page.
+    """
+    try:
+        html = await run_in_threadpool(navigate_and_fetch, req.url, req.steps)
+    except Exception as e:
+        raise HTTPException(500, f"Navigation error: {e}")
+
+    md = html_to_markdown(html)
+
+    try:
+        return extract_fields(md, FIELDS)
+    except Exception as e:
+        raise HTTPException(500, f"Error extracting fields: {e}")
