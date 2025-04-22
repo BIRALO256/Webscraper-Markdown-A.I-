@@ -26,6 +26,9 @@ Do not include any additional text, explanation, or markdown fences—just the J
 {markdown}
 ```"""
 
+    # Add your print here before sending to OpenAI
+    print("\n📤 Sending prompt to LLM:\n", prompt)
+
     # Call the new v1 OpenAI Python interface
     resp = openai.chat.completions.create(
         model="gpt-4o",
