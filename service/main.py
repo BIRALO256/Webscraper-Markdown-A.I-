@@ -60,19 +60,14 @@ async def scrape_and_extract(url: str):
 
 @app.post("/scrape/nav")
 async def scrape_with_navigation(req: NavRequest):
-    """
-    Human-like multi-step scraping.
-    Supply `req.url` plus an ordered list of `req.steps`
-    to click or navigate until you reach the target page.
-    """
-    try:
-        html = await run_in_threadpool(navigate_and_fetch, req.url, req.steps)
-    except Exception as e:
-        raise HTTPException(500, f"Navigation error: {e}")
+        try:
+            html = await navigate_and_fetch(req.url, req.steps)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Navigation error: {e}")
 
-    md = html_to_markdown(html)
+        md = html_to_markdown(html)
 
-    try:
-        return extract_fields(md, FIELDS)
-    except Exception as e:
-        raise HTTPException(500, f"Error extracting fields: {e}")
+        try:
+            return extract_fields(md, FIELDS)
+        except Exception as e:
+            raise HTTPException(500, f"Error extracting fields: {e}")
